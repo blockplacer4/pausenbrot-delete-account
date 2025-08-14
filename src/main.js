@@ -1,19 +1,26 @@
 import { Client, Users } from 'node-appwrite';
 
-// This Appwrite function will be executed every time your function is triggered
 export default async ({ req, res, log, error }) => {
-  // You can use the Appwrite SDK to interact with other services
-  // For this example, we're using the Users service
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(req.headers['x-appwrite-key'] ?? '');
+    .setKey(process.env.APPWRITE_API_KEY); // muss Scope users.write haben
+
   const users = new Users(client);
 
+  const { userId } = req.body ?? {};
+
+  if (!userId) {
+    error('❌ Kein userId im Request-Body gefunden.');
+    return res.json({ error: 'userId fehlt im Request-Body' }, 400);
+  }
+
   try {
-    const response = await users.delete(userId);
-    log(`Response of User deletion: ${response.total}`);
-  } catch(err) {
-    error("Could not delete User Account: " + err.message);
+    await users.delete(userId);
+    log(`✅ User ${userId} gelöscht`);
+    return res.json({ success: `User ${userId} gelöscht` });
+  } catch (err) {
+    error('❌ Fehler beim Löschen: ' + err.message);
+    return res.json({ error: 'Konnte User nicht löschen: ' + err.message }, 500);
   }
 };
