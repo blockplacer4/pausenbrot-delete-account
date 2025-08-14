@@ -4,14 +4,21 @@ export default async ({ req, res, log, error }) => {
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(process.env.APPWRITE_API_KEY); // muss Scope users.write haben
+    .setKey(process.env.APPWRITE_API_KEY); // Scope users.write nötig
 
   const users = new Users(client);
 
-  const { userId } = req.body ?? {};
+  // Body parsen
+  let body;
+  try {
+    body = JSON.parse(req.body);
+  } catch {
+    return res.json({ error: 'Body ist kein gültiges JSON' }, 400);
+  }
+
+  const { userId } = body;
 
   if (!userId) {
-    error('❌ Kein userId im Request-Body gefunden.');
     return res.json({ error: 'userId fehlt im Request-Body' }, 400);
   }
 
